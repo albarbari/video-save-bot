@@ -1,6 +1,7 @@
 import os
 import asyncio
 import threading
+import re
 
 from flask import Flask
 from telegram import Update
@@ -24,7 +25,8 @@ telegram_app = Application.builder().token(BOT_TOKEN).build()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎬 Welcome to Video Save Bot!\n\n"
-        "Send me a video."
+        "Send me a video or a link to a video in a channel "
+        "that I have legitimate access to."
     )
 
 
@@ -37,12 +39,28 @@ async def receive_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def receive_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.strip()
+
+    if "t.me/" not in text:
+        return
+
+    await update.message.reply_text(
+        "🔗 Link received.\n\n"
+        "I'll check whether this message is accessible to the bot."
+    )
+
+
 telegram_app.add_handler(
     CommandHandler("start", start)
 )
 
 telegram_app.add_handler(
     MessageHandler(filters.VIDEO, receive_video)
+)
+
+telegram_app.add_handler(
+    MessageHandler(filters.TEXT & ~filters.COMMAND, receive_link)
 )
 
 
